@@ -46,7 +46,7 @@
                 <h2>{{ user.username }}</h2>
                 <p><strong>Email:</strong> {{ user.email }}</p>
                 <p><strong>Mobile Number:</strong> {{ user.mobile }}</p>
-                <p><strong>Role:</strong> {{ user.role }}</p>
+                <p><strong>Role:</strong> {{ user.role.name }}</p>
                 
                 <div class="button-group">
                     <a href="{{ url_for('register') }}" class="btn btn-primary">Create User</a>

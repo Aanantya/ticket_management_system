@@ -8,6 +8,7 @@ class RoleEnum(Enum):
     USER = 'User'
 
 class TicketStatusEnum(Enum):
+    NONE = '-- select --'
     PENDING = 'Pending'
     APPROVED = 'Approved'
     READY_TO_DISPATCH = 'Ready to Dispatch'
@@ -15,6 +16,7 @@ class TicketStatusEnum(Enum):
     CLOSED = 'Closed'
 
 class TicketPriorityEnum(Enum):
+    NONE = '-- select --'
     LOW = 'Low'
     MEDIUM = 'Medium'
     HIGH = 'High'

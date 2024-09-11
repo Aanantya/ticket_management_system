@@ -31,23 +31,23 @@
         <div class="card mt-4">
             <div class="card-body">
                 <!-- Form -->
-                <form method="POST">
+                <form method="POST" action="{{ url_for('generate_report') }}">
                     {{ form.hidden_tag() }}
 
                     <div class="row g-3">
                         <div class="col-md-3">
-                            {{ form.startdate.label(class="form-label") }}
-                            {{ form.startdate(class="form-control") }}
-                            {% if form.startdate.errors %}
-                                <div class="text-danger">{{ form.startdate.errors[0] }}</div>
+                            {{ form.start_date.label(class="form-label") }}
+                            {{ form.start_date(class="form-control") }}
+                            {% if form.start_date.errors %}
+                                <div class="text-danger">{{ form.start_date.errors[0] }}</div>
                             {% endif %}
                         </div>
 
                         <div class="col-md-3">
-                            {{ form.enddate.label(class="form-label") }}
-                            {{ form.enddate(class="form-control") }}
-                            {% if form.enddate.errors %}
-                                <div class="text-danger">{{ form.enddate.errors[0] }}</div>
+                            {{ form.end_date.label(class="form-label") }}
+                            {{ form.end_date(class="form-control") }}
+                            {% if form.end_date.errors %}
+                                <div class="text-danger">{{ form.end_date.errors[0] }}</div>
                             {% endif %}
                         </div>
 
@@ -72,6 +72,43 @@
                         {{ form.submit(class="btn btn-primary") }}
                     </div>
                 </form>
+
+                <h3 class="mt-5">Report Results</h3>
+
+                {% if tickets %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Ticket ID</th>
+                            <th>User ID</th>
+                            <th>Mobile</th>
+                            <th>Assets</th>
+                            <th>Priority</th>
+                            <th>Serial No.</th>
+                            <th>Model No.</th>
+                            <th>Ticket Status</th>
+                            <th>Assigned To</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in tickets %}
+                        <tr>
+                            <td>{{ ticket.id }}</td>
+                            <td>{{ ticket.user_id }}</td>
+                            <td>{{ ticket.mobile }}</td>
+                            <td>{{ ticket.assets }}</td>
+                            <td>{{ ticket.priority }}</td>
+                            <td>{{ ticket.serial_no }}</td>
+                            <td>{{ ticket.model_no }}</td>
+                            <td>{{ ticket.ticket_status.name }}</td>
+                            <td>{{ ticket.assigned_to }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No tickets found for the selected filters.</p>
+                {% endif %}
             </div>
         </div>
 

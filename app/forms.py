@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, TextAreaField, SubmitField, PasswordField, DateField, BooleanField, FileField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Regexp
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Regexp, Optional
 from datetime import date
 from app.enums import TicketStatusEnum, TicketPriorityEnum, RoleEnum
 
@@ -55,20 +55,21 @@ class CreateTicketForm(FlaskForm):
         DataRequired(message='Model number is required'),
         Length(min=5, max=15, message='Model number must be between 5 and 15 characters')
     ])
+    assigned_to = SelectField('Assign To', choices=[], coerce=int, validators=[DataRequired(message='Agent is required')])
     ticket_status = SelectField('Ticket Status', choices=[(status.name, status.value) for status in TicketStatusEnum], default=TicketStatusEnum.PENDING.name, validators=[DataRequired(message='Ticket status is required')])
     submit = SubmitField('Create Ticket')
 
 class GenerateReportForm(FlaskForm):
-    def validate_startdate(form, field):
+    def validate_start_date(form, field):
         if field.data < date.today():
             raise ValidationError("Start date cannot be in the past.")
     
-    def validate_enddate(form, field):
-        if field.data < form.startdate.data:
+    def validate_end_date(form, field):
+        if field.data < form.start_date.data:
             raise ValidationError("End date must be after the start date.")
 
-    startdate = DateField("Start Date", format='%Y-%m-%d', validators=[DataRequired()])
-    enddate = DateField("End Date", format='%Y-%m-%d', validators=[DataRequired()])
-    ticket_status = SelectField('Ticket Status', choices=[(status.name, status.value) for status in TicketStatusEnum], default=TicketStatusEnum.PENDING.name, validators=[DataRequired(message='Ticket status is required')])
-    priority = SelectField('Priority', choices=[(priority.name, priority.value) for priority in TicketPriorityEnum], validators=[DataRequired(message='Priority is required')])
+    start_date = DateField("Start Date", format='%Y-%m-%d', validators=[Optional()])
+    end_date = DateField("End Date", format='%Y-%m-%d', validators=[Optional()])
+    ticket_status = SelectField('Ticket Status', choices=[(status.name, status.value) for status in TicketStatusEnum])
+    priority = SelectField('Priority', choices=[(priority.name, priority.value) for priority in TicketPriorityEnum])
     submit = SubmitField("Generate Report")

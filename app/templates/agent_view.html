@@ -38,12 +38,14 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th>Sr No.</th>
                     <th>Ticket ID</th>
-                    <th>Title</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>Update Status</th>
+                    <th>Assests</th>
+                    <th>Priority</th>
+                    <th>Serial No.</th>
+                    <th>Model No.</th>
+                    <th>Ticket Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -51,13 +53,50 @@
                 <tr>
                     <td>{{ loop.index }}</td>
                     <td>{{ ticket.id }}</td>
-                    <td>{{ ticket.title }}</td>
-                    <td>{{ ticket.description }}</td>
-                    <td>{{ ticket.status }}</td>
+                    <td>{{ ticket.assets }}</td>
+                    <td>{{ ticket.priority }}</td>
+                    <td>{{ ticket.serial_no }}</td>
+                    <td>{{ ticket.model_no }}</td>
+                    <td>{{ ticket.ticket_status.name }}</td>
                     <td>
-                        <a href="{{ url_for('update_ticket_status', ticket_id=ticket.id) }}" class="btn btn-warning">Update Status</a>
+                        <button type="button" class="btn btn-warning" data-toggle="modal" data-target="#modal-{{ ticket.id }}">
+                            Update Status
+                        </button>
                     </td>
                 </tr>
+
+                <!-- Modal for each ticket -->
+                <div class="modal fade" id="modal-{{ ticket.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLabel">Update Ticket Status (ID: {{ ticket.id }})</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Form for updating the ticket status -->
+                                <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket.id) }}">
+                                    <div class="form-group">
+                                        <select name="ticket_status" class="form-control">
+                                            {% for status in ticket_status_enum %}
+                                                <option value="{{ status.name }}" {% if ticket.ticket_status.name == status.name %}selected{% endif %}>
+                                                    {{ status.value }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Update</button>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
             </tbody>
         </table>
