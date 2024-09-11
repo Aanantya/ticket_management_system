@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Ticket</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.0.5/dist/css/adminlte.min.css">
+</head>
+<body>
+<div class="container">
+    <div class="row justify-content-center align-items-center vh-100">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Create Ticket</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('create_ticket') }}">
+                        {{ form.hidden_tag() }}
+                        <div class="form-group">
+                            {{ form.user.label(class="form-label") }}
+                            {{ form.user(class="form-control") }}
+                            {% for error in form.user.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.mobile.label(class="form-label") }}
+                            {{ form.mobile(class="form-control") }}
+                            {% for error in form.mobile.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.assets.label(class="form-label") }}
+                            {{ form.assets(class="form-control", placeholder="Enter assets") }}
+                            {% for error in form.assets.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.priority.label(class="form-label") }}
+                            {{ form.priority(class="form-control") }}
+                            {% for error in form.priority.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.serial_no.label(class="form-label") }}
+                            {{ form.serial_no(class="form-control", placeholder="Enter serial number") }}
+                            {% for error in form.serial_no.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.model_no.label(class="form-label") }}
+                            {{ form.model_no(class="form-control", placeholder="Enter model number") }}
+                            {% for error in form.model_no.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.ticket_status.label(class="form-label") }}
+                            {{ form.ticket_status(class="form-control") }}
+                            {% for error in form.ticket_status.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            {{ form.submit(class="btn btn-primary btn-block") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js
