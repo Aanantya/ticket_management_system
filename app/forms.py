@@ -29,6 +29,7 @@ class UserRegistrationForm(FlaskForm):
         Length(min=5, max=15, message='First name must be between 5 and 15 characters')
     ])
     lastname = StringField('Last Name', validators=[
+        Optional(),
         Length(min=5, max=15, message='Last name must be between 5 and 15 characters')
     ])
     role = SelectField('Role', choices=[(role.name, role.value) for role in RoleEnum], coerce=str, validators=[DataRequired(message='Role is required')])
@@ -56,7 +57,7 @@ class CreateTicketForm(FlaskForm):
         Length(min=5, max=15, message='Model number must be between 5 and 15 characters')
     ])
     assigned_to = SelectField('Assign To', choices=[], coerce=int, validators=[DataRequired(message='Agent is required')])
-    ticket_status = SelectField('Ticket Status', choices=[(status.name, status.value) for status in TicketStatusEnum], default=TicketStatusEnum.PENDING.name, validators=[DataRequired(message='Ticket status is required')])
+    ticket_status = SelectField('Ticket Status', choices=[(status.name, status.value) for status in TicketStatusEnum], default=TicketStatusEnum.PENDING.name)
     submit = SubmitField('Create Ticket')
 
 class GenerateReportForm(FlaskForm):

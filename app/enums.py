@@ -1,12 +1,13 @@
 from enum import Enum
 
-# Enums for Role and Ticket Status
+# Enums for Role
 class RoleEnum(Enum):
     ADMIN = 'Admin'
     SUBADMIN = 'Subadmin'
     AGENT = 'Agent'
     USER = 'User'
 
+# Enum for Ticket Status
 class TicketStatusEnum(Enum):
     NONE = '-- select --'
     PENDING = 'Pending'
@@ -15,6 +16,7 @@ class TicketStatusEnum(Enum):
     DISPATCHED = 'Dispatched'
     CLOSED = 'Closed'
 
+# Enum for Ticket Priority
 class TicketPriorityEnum(Enum):
     NONE = '-- select --'
     LOW = 'Low'

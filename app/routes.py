@@ -1,3 +1,5 @@
+import os
+from werkzeug.utils import secure_filename
 from app import app, bcrypt, db
 from datetime import date
 from flask import render_template, redirect, url_for, request, flash, session
@@ -13,7 +15,6 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from jinja2.exceptions import UndefinedError
 
 login_manager = LoginManager(app)
-# login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
@@ -27,7 +28,6 @@ def handle_undefined_error(error):
 def forbidden_error(error):
     return render_template('landing_page.html'), 403
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -40,7 +40,7 @@ def role_required(role):
                 return redirect(url_for('login'))
             if current_user.role.name != role:
                 flash('You do not have permission to access this page.', 'danger')
-                return redirect(url_for('unauthorized'))  # Or any other error page
+                return redirect(url_for('unauthorized'))
             return func(*args, **kwargs)
         return wrapper
     return decorator
@@ -48,11 +48,11 @@ def role_required(role):
 @app.route('/')
 def landing_page():
     today = date.today()
-    # Fetching ticket and agent counts (dummy values for now)
-    active_tickets_count = Ticket.query.filter(Ticket.ticket_status!='CLOSED').count()
-    resolved_tickets_count = Ticket.query.filter_by(resolved_at=today).count()
-    closed_tickets_count = Ticket.query.filter_by(closed_at=today).count()
-    active_agents_count = User.query.filter_by(role='AGENT', status=True).count()
+
+    active_tickets_count = Ticket.query.filter(db.func.date(Ticket.created_at) == today).count()    # tickets had been generated today
+    resolved_tickets_count = Ticket.query.filter(db.func.date(Ticket.resolved_at) == today, Ticket.ticket_status == 'RESOLVED').count()  # tickets had been resolved today
+    closed_tickets_count = Ticket.query.filter_by(closed_at=today).count()  # tickets had been closed today
+    active_agents_count = User.query.filter_by(role='AGENT', status=True).count()    # agents working on the tickets today
 
     return render_template('landing.html',
                            active_tickets_count=active_tickets_count,
@@ -120,12 +120,21 @@ def register():
             # Ensure role selected is within allowed roles
             if form.role.data not in allowed_roles:
                 flash(f"You can only create users with roles: {', '.join(allowed_roles)}", "danger")
+                print(f"You can only create users with roles: {', '.join(allowed_roles)}", "danger")
                 return render_template('register.html', form=form)
 
             # TBD: Upload the profile picture
             if form.profile_pic.data:
-                pic = form.profile_pic.data
+                profile_pic = form.profile_pic.data
+                
+                extension = os.path.splitext(profile_pic.filename)[1]   # extract file extension
+                new_filename = f"{current_user.id}{extension}"    # new filename
+                secure_filename(new_filename)
+                file_path = os.path.join(app.config['PROFILE_PIC_STORAGE_FOLDER'], new_filename)
+                profile_pic.save(file_path)
 
+                print('file_path : ', file_path)
+          
             # Autogeneration password
             if form.role.data == 'User':
                 password = 'User@1234'
@@ -143,6 +152,7 @@ def register():
                 lastname=form.lastname.data,
                 password=hashed_password,
                 role=form.role.data,
+                profile_pic=file_path,
                 status=form.status.data
             )
 
@@ -155,7 +165,6 @@ def register():
             # TBD Send mail on successful registration
 
             flash('Registration successful.')
-            # return redirect(url_for('login'))
 
     return render_template('register.html', form=form)
 
@@ -165,8 +174,11 @@ def register():
 def create_ticket():
     form = CreateTicketForm()
     print("role = ", current_user.role.name)
+
     # Populate user choices based on available users
     form.user.choices = [(user.id, user.username) for user in User.query.filter_by(role='USER').all()]
+        
+    # Populate agent choices based on available agents
     form.assigned_to.choices = [(assigned_to.id, assigned_to.username) for assigned_to in User.query.filter_by(role='AGENT').all()]
 
     if request.method == 'POST' and form.validate_on_submit():
@@ -191,15 +203,20 @@ def create_ticket():
             return redirect(url_for('subadmin_view'))
 
         except Exception as e:
+            # Rollback changes
             db.session.rollback()
             flash(f'An error occurred: {str(e)}', 'danger')
 
     return render_template('create_ticket.html', form=form)
 
+
 @app.route('/generate-report', methods=['GET', 'POST'])
+@role_required('SUBADMIN')
+@login_required
 def generate_report():
     form = GenerateReportForm()
-    if form.validate_on_submit():
+    
+    if request.method == 'POST' and form.validate_on_submit():
         # Collect form data
         start_date = form.start_date.data
         end_date = form.end_date.data
@@ -207,8 +224,10 @@ def generate_report():
         priority = form.priority.data
 
         print(start_date, end_date, ticket_status, priority)
+        
         # Base query
         query = Ticket.query
+        
         # Apply filters conditionally
         if start_date:
             query = query.filter(Ticket.created_at >= start_date)
@@ -219,12 +238,12 @@ def generate_report():
         if priority != 'NONE':
             query = query.filter(Ticket.priority == priority)
 
-        # FInally
+        # Retrieve all the results
         tickets = query.all()
 
         print(tickets)
         return render_template('generate_report.html', form=form, tickets=tickets)
-        
+
     return render_template('generate_report.html', form=form, tickets=None)
 
 
@@ -233,21 +252,24 @@ def generate_report():
 @app.route('/update-ticket-status/<int:ticket_id>', methods=['POST'])
 def update_ticket_status(ticket_id):
 
+    # Retrieve ticket data by ticket_id
     ticket = Ticket.query.filter_by(id=ticket_id).first()
 
+    # Collect new ticket status
     new_ticket_status = request.form.get('ticket_status')
 
+    # Update the status if ticket exists
     if ticket:
         Ticket.query.filter_by(id=ticket_id).update({"ticket_status": new_ticket_status})
         db.session.commit()
 
     return redirect(url_for('agent_view'))
 
-# send_email on successful user registration
+# TBD send_email on successful user registration
 def send_email():
     return 
 
-# copy the profile_pic to local dir
+# TBD Copy the profile_pic to local dir
 def fileupload():
     return
 
@@ -255,21 +277,23 @@ def fileupload():
 @role_required('ADMIN')
 @app.route('/admin')
 def admin_view():
-    user = current_user
+    user = current_user # logged in user
     return render_template('admin_view.html', user=user)
 
 @app.route('/sub-admin')
 @role_required('SUBADMIN')
 @login_required
 def subadmin_view():
-    user = current_user
+    user = current_user # logged in user
     return render_template('subadmin_view.html', user=user)
 
 @app.route('/agent')
 @role_required('AGENT')
 @login_required
 def agent_view():
-    user = current_user
+    user = current_user # logged in user
+
+    # Populate all the tickets assigned to the user (Agent)
     tickets = Ticket.query.filter_by(assigned_to=current_user.id).all()
     print('tickets = ', tickets)
     return render_template('agent_view.html', tickets=tickets, ticket_status_enum=TicketStatusEnum)
