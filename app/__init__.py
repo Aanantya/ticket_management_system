@@ -21,6 +21,8 @@ login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
 def create_app():
+    from app.create_admin import create_default_user
+
     app = Flask(__name__)
     app.config.from_object(DevelopmentConfig)
 
@@ -38,5 +40,6 @@ def create_app():
     # Create database tables
     with app.app_context():
         db.create_all()
+        create_default_user()  # Create default user
 
     return app

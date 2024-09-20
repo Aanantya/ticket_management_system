@@ -13,16 +13,19 @@ from app.models import User, Ticket
 from app.enums import TicketStatusEnum
 from app.forms import UserLoginForm, UserRegistrationForm, CreateTicketForm, GenerateReportForm
 
+# tms app blueprint
 tms = Blueprint('tms', __name__)
 
 # Undefined error handling
 @tms.errorhandler(UndefinedError)
 def handle_undefined_error(error):
-    return redirect(request.referrer or url_for('tms.landing_page'))  # Fallback
+    # return redirect(request.referrer or url_for('tms.landing_page'))  # Fallback
+    return '<h5>Undefined error occured</h5>'
 
 @tms.errorhandler(403)
 def forbidden_error(error):
-    return redirect(request.referrer or url_for('tms.landing_page'))  # Fallback
+    # return redirect(request.referrer or url_for('tms.landing_page'))  # Fallback
+    return '<h5>Forbidden access</h5>'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -33,7 +36,7 @@ def role_required(role):
         @wraps(func)
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated:
-                return redirect(url_for('login'))
+                return redirect(url_for('tms.login'))
             if current_user.role.name != role:
                 flash('You do not have permission to access this page.', 'danger')
                 return redirect(url_for('unauthorized'))
