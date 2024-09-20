@@ -16,7 +16,7 @@
                     <h3 class="card-title">Register</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('register') }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ url_for('tms.register') }}" enctype="multipart/form-data">
                         {{ form.hidden_tag() }}
                         <div class="form-group">
                             {{ form.username.label(class="form-label") }}

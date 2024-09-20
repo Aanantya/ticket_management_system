@@ -1,28 +1,42 @@
+import os
 from flask import Flask
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
-from app.config import DevelopmentConfig
+from flask_mail import Mail
+from flask_login import LoginManager
+from config import DevelopmentConfig, ProductionConfig
 
+# Load environment variables
+load_dotenv()
+
+# Flask extensions
 db = SQLAlchemy()
 migrate = Migrate()
 bcrypt = Bcrypt()
+mail = Mail()
+login_manager = LoginManager()
+login_manager.login_view = 'login'
+login_manager.login_message_category = 'info'
 
-load_dotenv()
+def create_app():
+    app = Flask(__name__)
+    app.config.from_object(DevelopmentConfig)
 
-app = Flask(__name__)
+    # Initialize Flask extensions
+    db.init_app(app)
+    migrate.init_app(app, db)
+    bcrypt.init_app(app)
+    mail.init_app(app)
+    login_manager.init_app(app)
 
-app.config.from_object(DevelopmentConfig)
+    # Register tms blueprint
+    from app.routes import tms
+    app.register_blueprint(tms)
 
-db.init_app(app)
+    # Create database tables
+    with app.app_context():
+        db.create_all()
 
-migrate.init_app(app, db)
-
-bcrypt.init_app(app)
-
-from app import routes
-
-# Create database tables
-with app.app_context():
-    db.create_all()
+    return app

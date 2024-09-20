@@ -1,32 +1,28 @@
 import os
 from werkzeug.utils import secure_filename
-from app import app, bcrypt, db
 from datetime import date
-from flask import render_template, redirect, url_for, request, flash, session
 from functools import wraps
-from app.models import User, Ticket
-
-from app.enums import TicketStatusEnum
-
-from app.forms import UserLoginForm, UserRegistrationForm, CreateTicketForm, GenerateReportForm
-
+from flask import render_template, redirect, url_for, request, flash, session
+from flask import Blueprint
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-
+from flask_mail import Message
 from jinja2.exceptions import UndefinedError
 
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-login_manager.login_message_category = 'info'
+from app import bcrypt, db, mail, login_manager
+from app.models import User, Ticket
+from app.enums import TicketStatusEnum
+from app.forms import UserLoginForm, UserRegistrationForm, CreateTicketForm, GenerateReportForm
 
+tms = Blueprint('tms', __name__)
 
-# Undefined error handling'
-@app.errorhandler(UndefinedError)
+# Undefined error handling
+@tms.errorhandler(UndefinedError)
 def handle_undefined_error(error):
-    return redirect(url_for('login'))
+    return redirect(request.referrer or url_for('tms.landing_page'))  # Fallback
 
-@app.errorhandler(403)
+@tms.errorhandler(403)
 def forbidden_error(error):
-    return render_template('landing_page.html'), 403
+    return redirect(request.referrer or url_for('tms.landing_page'))  # Fallback
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -45,7 +41,12 @@ def role_required(role):
         return wrapper
     return decorator
 
-@app.route('/')
+@login_required
+@tms.route('/access-denied')
+def access_denied():
+    return '<h5>Access Denied</h5>'
+
+@tms.route('/')
 def landing_page():
     today = date.today()
 
@@ -60,7 +61,7 @@ def landing_page():
                            closed_tickets_count=closed_tickets_count,
                            active_agents_count=active_agents_count)
 
-@app.route('/login', methods=['GET', 'POST'])
+@tms.route('/login', methods=['GET', 'POST'])
 def login():
     form = UserLoginForm()
 
@@ -89,14 +90,14 @@ def login():
     return render_template('login.html', form=form)
 
 @login_required
-@app.route('/logout', methods=['GET'])
+@tms.route('/logout', methods=['GET'])
 def logout():
     session.clear()   
     logout_user()
     return redirect(url_for('landing_page'))
 
 @login_required
-@app.route('/register', methods=['GET', 'POST'])
+@tms.route('/register', methods=['GET', 'POST'])
 def register():
     form = UserRegistrationForm()
     
@@ -162,13 +163,24 @@ def register():
             db.session.add(new_user)
             db.session.commit()
 
-            # TBD Send mail on successful registration
+            # Send mail on successful registration
+            msg = Message(
+                subject="Account Created Successfully",
+                body=f"Dear User,\n\nThank you for registering! Your username: {new_user['username']} and password: {password}.",
+                recipients=[new_user['username']]
+            )
+
+            try:
+                mail.send(msg)
+                print('Email sent successfully')
+            except Exception as e:
+                print(f"Failed to send email: {e}")
 
             flash('Registration successful.')
 
     return render_template('register.html', form=form)
 
-@app.route('/create-ticket', methods=['GET', 'POST'])
+@tms.route('/create-ticket', methods=['GET', 'POST'])
 @role_required('SUBADMIN')
 @login_required
 def create_ticket():
@@ -200,7 +212,8 @@ def create_ticket():
             db.session.commit()
 
             flash('Ticket created successfully!', 'success')
-            return redirect(url_for('subadmin_view'))
+            
+            return redirect(request.referrer or url_for('tms.subadmin_view'))
 
         except Exception as e:
             # Rollback changes
@@ -210,7 +223,7 @@ def create_ticket():
     return render_template('create_ticket.html', form=form)
 
 
-@app.route('/generate-report', methods=['GET', 'POST'])
+@tms.route('/generate-report', methods=['GET', 'POST'])
 @role_required('SUBADMIN')
 @login_required
 def generate_report():
@@ -249,7 +262,7 @@ def generate_report():
 
 @login_required
 @role_required('AGENT')
-@app.route('/update-ticket-status/<int:ticket_id>', methods=['POST'])
+@tms.route('/update-ticket-status/<int:ticket_id>', methods=['POST'])
 def update_ticket_status(ticket_id):
 
     # Retrieve ticket data by ticket_id
@@ -263,7 +276,7 @@ def update_ticket_status(ticket_id):
         Ticket.query.filter_by(id=ticket_id).update({"ticket_status": new_ticket_status})
         db.session.commit()
 
-    return redirect(url_for('agent_view'))
+    return redirect(request.referrer or url_for('tms.agent_view'))
 
 # TBD send_email on successful user registration
 def send_email():
@@ -275,19 +288,19 @@ def fileupload():
 
 @login_required
 @role_required('ADMIN')
-@app.route('/admin')
+@tms.route('/admin')
 def admin_view():
     user = current_user # logged in user
     return render_template('admin_view.html', user=user)
 
-@app.route('/sub-admin')
+@tms.route('/sub-admin')
 @role_required('SUBADMIN')
 @login_required
 def subadmin_view():
     user = current_user # logged in user
     return render_template('subadmin_view.html', user=user)
 
-@app.route('/agent')
+@tms.route('/agent')
 @role_required('AGENT')
 @login_required
 def agent_view():

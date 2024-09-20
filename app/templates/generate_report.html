@@ -19,7 +19,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                        <a class="nav-link" href="{{ url_for('tms.logout') }}">Logout</a>
                     </li>
                 </ul>
             </div>
@@ -31,7 +31,7 @@
         <div class="card mt-4">
             <div class="card-body">
                 <!-- Form -->
-                <form method="POST" action="{{ url_for('generate_report') }}">
+                <form method="POST" action="{{ url_for('tms.generate_report') }}">
                     {{ form.hidden_tag() }}
 
                     <div class="row g-3">

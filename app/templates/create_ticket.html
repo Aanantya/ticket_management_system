@@ -16,7 +16,7 @@
                     <h3 class="card-title">Create Ticket</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('create_ticket') }}">
+                    <form method="POST" action="{{ url_for('tms.create_ticket') }}">
                         {{ form.hidden_tag() }}
                         <div class="form-group">
                             {{ form.user.label(class="form-label") }}

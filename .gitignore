@@ -3,3 +3,5 @@
 /migrations/
 /instance/
 /profiles/
+/.env
+create_admin.py

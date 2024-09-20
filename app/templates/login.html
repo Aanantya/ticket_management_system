@@ -16,7 +16,7 @@
                     <h3 class="card-title">Login</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('login') }}">
+                    <form method="POST" action="{{ url_for('tms.login') }}">
                         {{ form.hidden_tag() }}
                         <div class="form-group">
                             {{ form.username.label(class="form-label") }}
