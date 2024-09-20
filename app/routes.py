@@ -12,6 +12,12 @@ from app import bcrypt, db, mail, login_manager
 from app.models import User, Ticket
 from app.enums import TicketStatusEnum
 from app.forms import UserLoginForm, UserRegistrationForm, CreateTicketForm, GenerateReportForm
+from app.queries import (
+    get_user_by_id, get_user_by_username, add_user, get_ticket_by_id,
+    create_ticket, update_ticket_status, get_tickets_by_user, filter_tickets_by_criteria,
+    get_active_tickets_count, get_resolved_tickets_count, get_closed_tickets_count,
+    get_active_agents_count, session_rollback
+)
 
 # tms app blueprint
 tms = Blueprint('tms', __name__)
@@ -29,7 +35,7 @@ def forbidden_error(error):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return get_user_by_id(user_id)
 
 def role_required(role):
     def decorator(func):
@@ -53,10 +59,11 @@ def access_denied():
 def landing_page():
     today = date.today()
 
-    active_tickets_count = Ticket.query.filter(db.func.date(Ticket.created_at) == today).count()    # tickets had been generated today
-    resolved_tickets_count = Ticket.query.filter(db.func.date(Ticket.resolved_at) == today, Ticket.ticket_status == 'RESOLVED').count()  # tickets had been resolved today
-    closed_tickets_count = Ticket.query.filter_by(closed_at=today).count()  # tickets had been closed today
-    active_agents_count = User.query.filter_by(role='AGENT', status=True).count()    # agents working on the tickets today
+    # Get data from database
+    active_tickets_count = get_active_tickets_count()
+    resolved_tickets_count = get_resolved_tickets_count()
+    closed_tickets_count = get_closed_tickets_count()
+    active_agents_count = get_active_agents_count()
 
     return render_template('landing.html',
                            active_tickets_count=active_tickets_count,
@@ -74,18 +81,18 @@ def login():
             password = form.password.data
 
             # Retrieve user
-            user = User.query.filter_by(username=form.username.data).first()
+            user = get_user_by_username(username=form.username.data)
 
             if user and bcrypt.check_password_hash(user.password, password):
                 login_user(user)
 
                 # Redirect based on role
                 if user.role.name == 'ADMIN':
-                    return redirect(url_for('admin_view'))
+                    return redirect(url_for('tms.admin_view'))
                 elif user.role.name == 'SUBADMIN':
-                    return redirect(url_for('subadmin_view'))
+                    return redirect(url_for('tms.subadmin_view'))
                 elif user.role.name == 'AGENT':
-                    return redirect(url_for('agent_view'))
+                    return redirect(url_for('tms.agent_view'))
 
             else:
                 flash('Login unsuccessful. Please check username and password.') 
@@ -97,7 +104,7 @@ def login():
 def logout():
     session.clear()   
     logout_user()
-    return redirect(url_for('landing_page'))
+    return redirect(url_for('tms.landing_page'))
 
 @login_required
 @tms.route('/register', methods=['GET', 'POST'])
@@ -116,7 +123,8 @@ def register():
         if form.validate_on_submit():
 
             # Check if the username already exists
-            existing_user = User.query.filter_by(username=form.username.data).first()
+            existing_user = get_user_by_username(username=form.username.data)
+            
             if existing_user:
                 flash("Username already exists.", "danger")
                 return render_template('register.html', form=form)
@@ -163,8 +171,7 @@ def register():
             print('new_user: ', new_user)
 
             # Add user to the database
-            db.session.add(new_user)
-            db.session.commit()
+            add_user(new_user)
 
             # Send mail on successful registration
             msg = Message(
@@ -177,6 +184,8 @@ def register():
                 mail.send(msg)
                 print('Email sent successfully')
             except Exception as e:
+                # Rollback changes
+                db.session.rollback()
                 print(f"Failed to send email: {e}")
 
             flash('Registration successful.')
@@ -189,12 +198,12 @@ def register():
 def create_ticket():
     form = CreateTicketForm()
     print("role = ", current_user.role.name)
-
+    
     # Populate user choices based on available users
-    form.user.choices = [(user.id, user.username) for user in User.query.filter_by(role='USER').all()]
-        
+    form.user.choices = get_user_choices(role='USER')
+
     # Populate agent choices based on available agents
-    form.assigned_to.choices = [(assigned_to.id, assigned_to.username) for assigned_to in User.query.filter_by(role='AGENT').all()]
+    form.assigned_to.choices = get_user_choices(role='AGENT')
 
     if request.method == 'POST' and form.validate_on_submit():
         try:
@@ -211,8 +220,7 @@ def create_ticket():
             )
 
             # Save the ticket to the database
-            db.session.add(new_ticket)
-            db.session.commit()
+            create_ticket(new_ticket)
 
             flash('Ticket created successfully!', 'success')
             
@@ -220,7 +228,7 @@ def create_ticket():
 
         except Exception as e:
             # Rollback changes
-            db.session.rollback()
+            session_rollback()
             flash(f'An error occurred: {str(e)}', 'danger')
 
     return render_template('create_ticket.html', form=form)
@@ -241,21 +249,7 @@ def generate_report():
 
         print(start_date, end_date, ticket_status, priority)
         
-        # Base query
-        query = Ticket.query
-        
-        # Apply filters conditionally
-        if start_date:
-            query = query.filter(Ticket.created_at >= start_date)
-        if end_date:
-            query = query.filter(Ticket.created_at <= end_date)
-        if ticket_status != 'NONE':
-            query = query.filter(Ticket.ticket_status == ticket_status)
-        if priority != 'NONE':
-            query = query.filter(Ticket.priority == priority)
-
-        # Retrieve all the results
-        tickets = query.all()
+        tickets = filter_tickets_by_criteria(start_date, end_date, ticket_status, priority)
 
         print(tickets)
         return render_template('generate_report.html', form=form, tickets=tickets)
@@ -269,16 +263,15 @@ def generate_report():
 def update_ticket_status(ticket_id):
 
     # Retrieve ticket data by ticket_id
-    ticket = Ticket.query.filter_by(id=ticket_id).first()
+    ticket = get_ticket_by_id(ticket_id)
 
     # Collect new ticket status
     new_ticket_status = request.form.get('ticket_status')
 
     # Update the status if ticket exists
     if ticket:
-        Ticket.query.filter_by(id=ticket_id).update({"ticket_status": new_ticket_status})
-        db.session.commit()
-
+        update_ticket_status(ticket_id=ticket_id, new_status=new_ticket_status)
+    
     return redirect(request.referrer or url_for('tms.agent_view'))
 
 # TBD send_email on successful user registration
@@ -311,5 +304,6 @@ def agent_view():
 
     # Populate all the tickets assigned to the user (Agent)
     tickets = Ticket.query.filter_by(assigned_to=current_user.id).all()
+
     print('tickets = ', tickets)
     return render_template('agent_view.html', tickets=tickets, ticket_status_enum=TicketStatusEnum)
