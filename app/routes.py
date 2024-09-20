@@ -179,7 +179,7 @@ def register():
                 body=f"Dear User,\n\nThank you for registering! Your username: {new_user['username']} and password: {password}.",
                 recipients=[new_user['username']]
             )
-
+            
             try:
                 mail.send(msg)
                 print('Email sent successfully')

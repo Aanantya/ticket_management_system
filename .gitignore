@@ -1,7 +1,6 @@
-/env/
-/app/__pycache__/
-/migrations/
-/instance/
-/profiles/
-/.env
-create_admin.py
+./env/
+./app/__pycache__/
+./migrations/
+./instance/
+./profiles/
+./.env
