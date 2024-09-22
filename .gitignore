@@ -1,6 +1,6 @@
-./env/
-./app/__pycache__/
-./migrations/
-./instance/
-./profiles/
-./.env
+env/
+app/__pycache__/
+migrations/
+instance/
+profiles/
+.env
