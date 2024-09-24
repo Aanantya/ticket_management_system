@@ -34,6 +34,23 @@
     </nav>
 
     <main class="container my-5">
+        <div class="row text-center">
+            <!-- Flash message section -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="alert-container">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+        </div>
         <h2>Assigned Tickets</h2>
         <table class="table table-striped">
             <thead>
@@ -78,6 +95,7 @@
                             <div class="modal-body">
                                 <!-- Form for updating the ticket status -->
                                 <form method="POST" action="{{ url_for('tms.update_ticket_status', ticket_id=ticket.id) }}">
+                                    {{ form.hidden_tag() }}
                                     <div class="form-group">
                                         <select name="ticket_status" class="form-control">
                                             {% for status in ticket_status_enum %}

@@ -13,7 +13,7 @@ class User(db.Model, UserMixin):
     firstname = db.Column(db.String(50), nullable=False)
     lastname = db.Column(db.String(50), nullable=False)
     role = db.Column(db.Enum(RoleEnum), nullable=False)
-    profile_pic = db.Column(db.String(100), default='./static/default.jpg')
+    profile_pic = db.Column(db.String(100))
     status = db.Column(db.Boolean, default=True)  # True for active, False for inactive
     password = db.Column(db.String(200), nullable=False)
 
