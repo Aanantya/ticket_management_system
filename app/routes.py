@@ -64,11 +64,6 @@ def role_required(*roles):
         return wrapper
     return decorator
 
-@login_required
-@tms.route('/access-denied')
-def access_denied():
-    return render_template('access_denied.html', message="Access Denied")
-
 @tms.route('/')
 def landing_page():
     try:
@@ -116,8 +111,8 @@ def login():
             flash('Login unsuccessful. Please check username and password.', 'warning') 
     return render_template('login.html', form=form)
 
-@login_required
 @tms.route('/logout', methods=['GET'])
+@login_required
 def logout():
     try:
         logout_user()
@@ -126,8 +121,8 @@ def logout():
         flash('Error while logout.', 'warning')
 
 @tms.route('/register', methods=['GET', 'POST'])
-@login_required
 @role_required('ADMIN', 'SUBADMIN')
+@login_required
 def register():
     try:
         form = UserRegistrationForm()
@@ -276,9 +271,9 @@ def generate_report():
     except Exception as e:
         print(f'Error occured, {e}')
 
-@login_required
-@role_required('AGENT')
 @tms.route('/update-ticket-status/<int:ticket_id>', methods=['POST'])
+@role_required('AGENT')
+@login_required
 def ticket_status_update(ticket_id):
     try:
         # Retrieve ticket data by ticket_id
@@ -296,9 +291,10 @@ def ticket_status_update(ticket_id):
     except Exception as e:
         return f'Error occured, {e}'
 
-@login_required
-@role_required('ADMIN')
+
 @tms.route('/admin')
+@role_required('ADMIN')
+@login_required
 def admin_view():
     try:
         user = current_user # logged in user
