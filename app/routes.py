@@ -13,11 +13,12 @@ from app.models import User, Ticket
 from app.enums import TicketStatusEnum
 from app.forms import UserLoginForm, UserRegistrationForm, CreateTicketForm, GenerateReportForm
 from app.file_upload import save_profile_picture
+from app.ticket_overview import get_data_from_cache_or_source
 from app.queries import (
     get_user_by_id, get_user_by_username, add_user, get_ticket_by_id,
-    create_ticket, update_ticket_status, get_tickets_by_user, filter_tickets_by_criteria,
+    add_ticket, update_ticket_status, get_tickets_by_user, filter_tickets_by_criteria,
     get_active_tickets_count, get_resolved_tickets_count, get_closed_tickets_count,
-    get_active_agents_count, session_rollback
+    get_active_agents_count, session_rollback, get_user_choices
 )
 
 # tms app blueprint
@@ -59,10 +60,10 @@ def landing_page():
     try:
         today = date.today()
         # Get data from database
-        active_tickets_count = get_active_tickets_count()
-        resolved_tickets_count = get_resolved_tickets_count()
-        closed_tickets_count = get_closed_tickets_count()
-        active_agents_count = get_active_agents_count()
+        active_tickets_count = get_data_from_cache_or_source('active_tickets_count', get_active_tickets_count)
+        resolved_tickets_count = get_data_from_cache_or_source('resolved_tickets_count', get_resolved_tickets_count)
+        closed_tickets_count = get_data_from_cache_or_source('closed_tickets_count', get_closed_tickets_count)
+        active_agents_count = get_data_from_cache_or_source('active_agents_count', get_active_agents_count)
         return render_template('landing.html',
                             active_tickets_count=active_tickets_count,
                             resolved_tickets_count=resolved_tickets_count,
@@ -222,7 +223,7 @@ def create_ticket():
                 )
 
                 # Save the ticket to the database
-                create_ticket(new_ticket)
+                add_ticket(new_ticket)
                 flash('Ticket created successfully!', 'success')
                 return redirect(request.referrer or url_for('tms.subadmin_view'))
 
@@ -264,17 +265,18 @@ def generate_report():
 @login_required
 @role_required('AGENT')
 @tms.route('/update-ticket-status/<int:ticket_id>', methods=['POST'])
-def update_ticket_status(ticket_id):
+def ticket_status_update(ticket_id):
     try:
         # Retrieve ticket data by ticket_id
         ticket = get_ticket_by_id(ticket_id)
 
         # Collect new ticket status
-        if form.validate_on_submit():
-            new_ticket_status = request.form.get('ticket_status')
-            # Update the status if ticket exists
-            if ticket:
-                update_ticket_status(ticket_id=ticket_id, new_status=new_ticket_status)
+        #if form.validate_on_submit():
+        new_ticket_status = request.form.get('ticket_status')
+        # Update the status if ticket exists
+        if ticket:
+            print('new_ticket_status: ', new_ticket_status)
+            update_ticket_status(ticket_id=ticket_id, new_status=new_ticket_status)
         
         return redirect(request.referrer or url_for('tms.agent_view'))
     except Exception as e:

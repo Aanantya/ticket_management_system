@@ -94,8 +94,7 @@
                             </div>
                             <div class="modal-body">
                                 <!-- Form for updating the ticket status -->
-                                <form method="POST" action="{{ url_for('tms.update_ticket_status', ticket_id=ticket.id) }}">
-                                    {{ form.hidden_tag() }}
+                                <form method="POST" action="{{ url_for('tms.ticket_status_update', ticket_id=ticket.id) }}">
                                     <div class="form-group">
                                         <select name="ticket_status" class="form-control">
                                             {% for status in ticket_status_enum %}

@@ -39,7 +39,7 @@ def get_user_choices(role):
 
 # Ticket-related queries
 # Add new ticket
-def create_ticket(ticket_data):
+def add_ticket(ticket_data):
     db.session.add(ticket_data)
     db.session.commit()
 
