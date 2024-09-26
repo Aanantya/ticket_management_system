@@ -37,15 +37,17 @@ def forbidden_error(error):
 def load_user(user_id):
     return get_user_by_id(user_id)
 
-def role_required(role):
+def role_required(*roles):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated:
                 return redirect(url_for('tms.login'))
-            if current_user.role.name != role:
+            print(f"Checking roles: {roles} for user: {current_user.role.name}")
+            
+            if current_user.role.name not in roles:
                 flash('You do not have permission to access this page.', 'danger')
-                return redirect(url_for('unauthorized'))
+                return redirect(url_for('tms.access_denied'))
             return func(*args, **kwargs)
         return wrapper
     return decorator
@@ -111,9 +113,9 @@ def logout():
     except Exception as e:
         flash('Error while logout.', 'warning')
 
-
-@login_required
 @tms.route('/register', methods=['GET', 'POST'])
+@login_required
+@role_required('ADMIN', 'SUBADMIN')
 def register():
     try:
         form = UserRegistrationForm()
