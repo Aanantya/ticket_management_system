@@ -24,14 +24,29 @@ from app.queries import (
 # tms app blueprint
 tms = Blueprint('tms', __name__)
 
-# Undefined error handling
-@tms.errorhandler(UndefinedError)
-def handle_undefined_error(error):
-    return render_template('error.html', message="Undefined error occurred"), 500
+@app.errorhandler(404)
+def page_not_found(e):
+    return jsonify({"error": "Page not found."}), 404
 
-@tms.errorhandler(403)
-def forbidden_error(error):
-    return render_template('error.html', message="Forbidden access"), 403
+@app.errorhandler(500)
+def internal_error(e):
+    return jsonify({"error": "Internal server error."}), 500
+
+@app.errorhandler(400)
+def bad_request(e):
+    return jsonify({"error": "Bad request."}), 400
+
+@app.errorhandler(401)
+def unauthorized(e):
+    return jsonify({"error": "Unauthorized."}), 401
+
+@app.errorhandler(403)
+def forbidden(e):
+    return jsonify({"error": "Forbidden."}), 403
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    return jsonify({"error": "Method not allowed."}), 405
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -43,11 +58,8 @@ def role_required(*roles):
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated:
                 return redirect(url_for('tms.login'))
-            print(f"Checking roles: {roles} for user: {current_user.role.name}")
-            
             if current_user.role.name not in roles:
                 flash('You do not have permission to access this page.', 'danger')
-                return redirect(url_for('tms.access_denied'))
             return func(*args, **kwargs)
         return wrapper
     return decorator
