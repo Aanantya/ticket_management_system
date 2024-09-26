@@ -13,6 +13,7 @@ from app.models import User, Ticket
 from app.enums import TicketStatusEnum
 from app.forms import UserLoginForm, UserRegistrationForm, CreateTicketForm, GenerateReportForm
 from app.file_upload import save_profile_picture
+from app.ticket_overview import get_data_from_cache_or_source
 from app.queries import (
     get_user_by_id, get_user_by_username, add_user, get_ticket_by_id,
     add_ticket, update_ticket_status, get_tickets_by_user, filter_tickets_by_criteria,
@@ -59,10 +60,10 @@ def landing_page():
     try:
         today = date.today()
         # Get data from database
-        active_tickets_count = get_active_tickets_count()
-        resolved_tickets_count = get_resolved_tickets_count()
-        closed_tickets_count = get_closed_tickets_count()
-        active_agents_count = get_active_agents_count()
+        active_tickets_count = get_data_from_cache_or_source('active_tickets_count', get_active_tickets_count)
+        resolved_tickets_count = get_data_from_cache_or_source('resolved_tickets_count', get_resolved_tickets_count)
+        closed_tickets_count = get_data_from_cache_or_source('closed_tickets_count', get_closed_tickets_count)
+        active_agents_count = get_data_from_cache_or_source('active_agents_count', get_active_agents_count)
         return render_template('landing.html',
                             active_tickets_count=active_tickets_count,
                             resolved_tickets_count=resolved_tickets_count,
