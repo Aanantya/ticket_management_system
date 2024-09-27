@@ -24,27 +24,27 @@ from app.queries import (
 # tms app blueprint
 tms = Blueprint('tms', __name__)
 
-@app.errorhandler(404)
+@tms.errorhandler(404)
 def page_not_found(e):
     return jsonify({"error": "Page not found."}), 404
 
-@app.errorhandler(500)
+@tms.errorhandler(500)
 def internal_error(e):
     return jsonify({"error": "Internal server error."}), 500
 
-@app.errorhandler(400)
+@tms.errorhandler(400)
 def bad_request(e):
     return jsonify({"error": "Bad request."}), 400
 
-@app.errorhandler(401)
+@tms.errorhandler(401)
 def unauthorized(e):
     return jsonify({"error": "Unauthorized."}), 401
 
-@app.errorhandler(403)
+@tms.errorhandler(403)
 def forbidden(e):
     return jsonify({"error": "Forbidden."}), 403
 
-@app.errorhandler(405)
+@tms.errorhandler(405)
 def method_not_allowed(e):
     return jsonify({"error": "Method not allowed."}), 405
 
@@ -121,8 +121,8 @@ def logout():
         flash('Error while logout.', 'warning')
 
 @tms.route('/register', methods=['GET', 'POST'])
-@role_required('ADMIN', 'SUBADMIN')
 @login_required
+@role_required('ADMIN', 'SUBADMIN')
 def register():
     try:
         form = UserRegistrationForm()
@@ -207,8 +207,8 @@ def register():
         return f'Exception: {e}'
 
 @tms.route('/create-ticket', methods=['GET', 'POST'])
-@role_required('SUBADMIN')
 @login_required
+@role_required('SUBADMIN')
 def create_ticket():
     try:
         form = CreateTicketForm()
@@ -247,8 +247,8 @@ def create_ticket():
         return f'Error occured, {e}'
 
 @tms.route('/generate-report', methods=['GET', 'POST'])
-@role_required('SUBADMIN')
 @login_required
+@role_required('SUBADMIN')
 def generate_report():
     try:
         form = GenerateReportForm()
@@ -272,8 +272,8 @@ def generate_report():
         print(f'Error occured, {e}')
 
 @tms.route('/update-ticket-status/<int:ticket_id>', methods=['POST'])
-@role_required('AGENT')
 @login_required
+@role_required('AGENT')
 def ticket_status_update(ticket_id):
     try:
         # Retrieve ticket data by ticket_id
@@ -293,8 +293,8 @@ def ticket_status_update(ticket_id):
 
 
 @tms.route('/admin')
-@role_required('ADMIN')
 @login_required
+@role_required('ADMIN')
 def admin_view():
     try:
         user = current_user # logged in user
@@ -303,8 +303,8 @@ def admin_view():
         return f'Error occured, {e}'
 
 @tms.route('/sub-admin')
-@role_required('SUBADMIN')
 @login_required
+@role_required('SUBADMIN')
 def subadmin_view():
     try:
         user = current_user # logged in user
@@ -313,8 +313,8 @@ def subadmin_view():
         return f'Error occured, {e}'
 
 @tms.route('/agent')
-@role_required('AGENT')
 @login_required
+@role_required('AGENT')
 def agent_view():
     try:
         user = current_user # logged in user
