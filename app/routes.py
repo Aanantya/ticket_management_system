@@ -13,6 +13,7 @@ from app.models import User, Ticket
 from app.enums import TicketStatusEnum
 from app.forms import UserLoginForm, UserRegistrationForm, CreateTicketForm, GenerateReportForm
 from app.file_upload import save_profile_picture
+from app.ticket_overview import get_data_from_cache_or_source
 from app.queries import (
     get_user_by_id, get_user_by_username, add_user, get_ticket_by_id,
     add_ticket, update_ticket_status, get_tickets_by_user, filter_tickets_by_criteria,
@@ -23,46 +24,55 @@ from app.queries import (
 # tms app blueprint
 tms = Blueprint('tms', __name__)
 
-# Undefined error handling
-@tms.errorhandler(UndefinedError)
-def handle_undefined_error(error):
-    return render_template('error.html', message="Undefined error occurred"), 500
+@tms.errorhandler(404)
+def page_not_found(e):
+    return jsonify({"error": "Page not found."}), 404
+
+@tms.errorhandler(500)
+def internal_error(e):
+    return jsonify({"error": "Internal server error."}), 500
+
+@tms.errorhandler(400)
+def bad_request(e):
+    return jsonify({"error": "Bad request."}), 400
+
+@tms.errorhandler(401)
+def unauthorized(e):
+    return jsonify({"error": "Unauthorized."}), 401
 
 @tms.errorhandler(403)
-def forbidden_error(error):
-    return render_template('error.html', message="Forbidden access"), 403
+def forbidden(e):
+    return jsonify({"error": "Forbidden."}), 403
+
+@tms.errorhandler(405)
+def method_not_allowed(e):
+    return jsonify({"error": "Method not allowed."}), 405
 
 @login_manager.user_loader
 def load_user(user_id):
     return get_user_by_id(user_id)
 
-def role_required(role):
+def role_required(*roles):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated:
                 return redirect(url_for('tms.login'))
-            if current_user.role.name != role:
+            if current_user.role.name not in roles:
                 flash('You do not have permission to access this page.', 'danger')
-                return redirect(url_for('unauthorized'))
             return func(*args, **kwargs)
         return wrapper
     return decorator
-
-@login_required
-@tms.route('/access-denied')
-def access_denied():
-    return render_template('access_denied.html', message="Access Denied")
 
 @tms.route('/')
 def landing_page():
     try:
         today = date.today()
         # Get data from database
-        active_tickets_count = get_active_tickets_count()
-        resolved_tickets_count = get_resolved_tickets_count()
-        closed_tickets_count = get_closed_tickets_count()
-        active_agents_count = get_active_agents_count()
+        active_tickets_count = get_data_from_cache_or_source('active_tickets_count', get_active_tickets_count)
+        resolved_tickets_count = get_data_from_cache_or_source('resolved_tickets_count', get_resolved_tickets_count)
+        closed_tickets_count = get_data_from_cache_or_source('closed_tickets_count', get_closed_tickets_count)
+        active_agents_count = get_data_from_cache_or_source('active_agents_count', get_active_agents_count)
         return render_template('landing.html',
                             active_tickets_count=active_tickets_count,
                             resolved_tickets_count=resolved_tickets_count,
@@ -101,8 +111,8 @@ def login():
             flash('Login unsuccessful. Please check username and password.', 'warning') 
     return render_template('login.html', form=form)
 
-@login_required
 @tms.route('/logout', methods=['GET'])
+@login_required
 def logout():
     try:
         logout_user()
@@ -110,9 +120,9 @@ def logout():
     except Exception as e:
         flash('Error while logout.', 'warning')
 
-
-@login_required
 @tms.route('/register', methods=['GET', 'POST'])
+@login_required
+@role_required('ADMIN', 'SUBADMIN')
 def register():
     try:
         form = UserRegistrationForm()
@@ -197,8 +207,8 @@ def register():
         return f'Exception: {e}'
 
 @tms.route('/create-ticket', methods=['GET', 'POST'])
-@role_required('SUBADMIN')
 @login_required
+@role_required('SUBADMIN')
 def create_ticket():
     try:
         form = CreateTicketForm()
@@ -237,8 +247,8 @@ def create_ticket():
         return f'Error occured, {e}'
 
 @tms.route('/generate-report', methods=['GET', 'POST'])
-@role_required('SUBADMIN')
 @login_required
+@role_required('SUBADMIN')
 def generate_report():
     try:
         form = GenerateReportForm()
@@ -261,9 +271,9 @@ def generate_report():
     except Exception as e:
         print(f'Error occured, {e}')
 
+@tms.route('/update-ticket-status/<int:ticket_id>', methods=['POST'])
 @login_required
 @role_required('AGENT')
-@tms.route('/update-ticket-status/<int:ticket_id>', methods=['POST'])
 def ticket_status_update(ticket_id):
     try:
         # Retrieve ticket data by ticket_id
@@ -281,9 +291,10 @@ def ticket_status_update(ticket_id):
     except Exception as e:
         return f'Error occured, {e}'
 
+
+@tms.route('/admin')
 @login_required
 @role_required('ADMIN')
-@tms.route('/admin')
 def admin_view():
     try:
         user = current_user # logged in user
@@ -292,8 +303,8 @@ def admin_view():
         return f'Error occured, {e}'
 
 @tms.route('/sub-admin')
-@role_required('SUBADMIN')
 @login_required
+@role_required('SUBADMIN')
 def subadmin_view():
     try:
         user = current_user # logged in user
@@ -302,8 +313,8 @@ def subadmin_view():
         return f'Error occured, {e}'
 
 @tms.route('/agent')
-@role_required('AGENT')
 @login_required
+@role_required('AGENT')
 def agent_view():
     try:
         user = current_user # logged in user
