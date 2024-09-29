@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            width: 250px;
+            background-color: #1d3557;
+            color: #fff;
+            position: fixed;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .sidebar .nav-link {
+            color: #fff;
+            margin: 10px 0;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .card-custom {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-header-custom {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar d-flex flex-column">
+        <a href="#" class="navbar-brand mb-4"><img src="logo.png" alt="Logo" width="40"></a>
+        <nav class="nav flex-column">
+            <a class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" href="#dashboard" role="tab" aria-controls="dashboard" aria-selected="true">Dashboard</a>
+            <a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="false">Profile</a>
+            <a class="nav-link" id="create-user-tab" data-bs-toggle="tab" href="#create-user" role="tab" aria-controls="create-user" aria-selected="false">Create New User</a>
+            <hr>
+            <a class="nav-link" href="#">LOGOUT</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="tab-content" id="myTabContent">
+            <!-- Dashboard Content -->
+            <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+                <div class="card-custom">
+                    <div class="card-header-custom">Dashboard</div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Role</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>john@example.com</td>
+                                    <td>John Doe</td>
+                                    <td>Admin</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Edit</button>
+                                        <button class="btn btn-sm btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Jane Smith</td>
+                                    <td>jane@example.com</td>
+                                    <td>Subadmin</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Edit</button>
+                                        <button class="btn btn-sm btn-danger">Delete</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Content -->
+            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                <div class="card-custom">
+                    <div class="card-header-custom">Profile</div>
+                    <img src="{{ user.profile_pic }}" alt="Profile Picture" class="img-fluid rounded-circle profile-pic mb-3">
+                    <p>Username: Admin</p>
+                    <p>Email: admin@example.com</p>
+                    <p>Role: Super Admin</p>
+                    <button class="btn btn-primary">Edit Profile</button>
+                </div>
+            </div>
+
+            <!-- Create New User Form -->
+            <div class="tab-pane fade" id="create-user" role="tabpanel" aria-labelledby="create-user-tab">
+                <div class="card-custom">
+                    <div class="card-header-custom">Create New User</div>
+                    <form method="POST" action="{{ url_for('admin.create_user') }}" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            {{ form.username(class="form-control", id="username", placeholder="Enter username") }}
+                            {% for error in form.username.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="mobile" class="form-label">Mobile Number</label>
+                            {{ form.mobile(class="form-control", id="mobile", placeholder="Enter mobile number") }}
+                            {% for error in form.mobile.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="firstname" class="form-label">First Name</label>
+                            {{ form.firstname(class="form-control", id="firstname", placeholder="Enter first name") }}
+                            {% for error in form.firstname.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="lastname" class="form-label">Last Name</label>
+                            {{ form.lastname(class="form-control", id="lastname", placeholder="Enter last name") }}
+                            {% for error in form.lastname.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            {{ form.role(class="form-select", id="role") }}
+                            {% for error in form.role.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="profile_pic" class="form-label">Profile Picture</label>
+                            {{ form.profile_pic(class="form-control", id="profile_pic") }}
+                            {% for error in form.profile_pic.errors %}
+                                <div class="alert alert-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-check mb-3">
+                            {{ form.status(class="form-check-input", id="status") }}
+                            <label class="form-check-label" for="status">Active Status</label>
+                        </div>
+                        <button type="submit" class="btn btn-success">Create User</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

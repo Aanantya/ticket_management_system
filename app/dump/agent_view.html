@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            width: 250px;
+            background-color: #1d3557;
+            color: #fff;
+            position: fixed;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .sidebar .nav-link {
+            color: #fff;
+            margin: 10px 0;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .card-custom {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-header-custom {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar d-flex flex-column">
+        <a href="#" class="navbar-brand mb-4"><img src="logo.png" alt="Logo" width="40"></a>
+        <nav class="nav flex-column">
+            <a class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" href="#dashboard" role="tab" aria-controls="dashboard" aria-selected="true">Dashboard</a>
+            <a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="false">Profile</a>
+            <hr>
+            <a class="nav-link" href="#">LOGOUT</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="row text-center">
+            <!-- Flash message div -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="alert-container">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- Dashboard Content -->
+            <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
+                <div class="card-custom">
+                    <div class="card-header-custom">Assigned Tickets</div>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Sr No.</th>
+                                    <th>Ticket ID</th>
+                                    <th>Assets</th>
+                                    <th>Priority</th>
+                                    <th>Serial No.</th>
+                                    <th>Model No.</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in tickets %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ ticket.id }}</td>
+                                    <td>{{ ticket.assets }}</td>
+                                    <td>{{ ticket.priority }}</td>
+                                    <td>{{ ticket.serial_no }}</td>
+                                    <td>{{ ticket.model_no }}</td>
+                                    <td>{{ ticket.ticket_status.name }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modal-{{ ticket.id }}">Edit</button>
+                                    </td>
+                                </tr>
+
+                                <!-- Modal for updating ticket status -->
+                                <div class="modal fade" id="modal-{{ ticket.id }}" tabindex="-1" aria-labelledby="modalLabel-{{ ticket.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modalLabel-{{ ticket.id }}">Update Ticket Status (ID: {{ ticket.id }})</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form method="POST" action="{{ url_for('tms.ticket_status_update', ticket_id=ticket.id) }}">
+                                                    <div class="mb-3">
+                                                        <label for="ticket_status" class="form-label">Ticket Status</label>
+                                                        <select name="ticket_status" class="form-control" id="ticket_status">
+                                                            {% for status in ticket_status_enum %}
+                                                                <option value="{{ status.name }}" {% if ticket.ticket_status.name == status.name %}selected{% endif %}>
+                                                                    {{ status.value }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-primary">Update</button>
+                                                </form>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Content -->
+            <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                <div class="card-custom">
+                    <div class="card-header-custom">Profile</div>
+                    <img src=".{{ user.profile_pic }}" alt="Profile Picture" class="img-fluid rounded-circle profile-pic mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    <h3>Username: {{ user.username }}</h3>
+                    <p>Full name: <strong>{{ user.firstname }} {{ user.lastname }}</strong></p>
+                    <p>Mobile Number: <strong>{{ user.mobile }}</strong></p>
+                    <p>Role: <strong>{{ user.role.name }}</strong></p>
+                    <button class="btn btn-custom" disabled>Edit Profile</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

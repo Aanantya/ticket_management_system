@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landing Page</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #ffffff; /* Light background for contrast */
+        }
+        .header-bg {
+            background-color: #1d3557; /* Consistent header color */
+        }
+        .alert-container {
+            margin-top: 20px;
+        }
+        .card {
+            border: 1px solid #1d3557; /* Consistent border color */
+            border-radius: 8px;
+        }
+        .card-title {
+            color: #1d3557; /* Consistent card title color */
+        }
+        .btn-custom {
+            background-color: #1d3557; /* Consistent color */
+            color: white;
+        }
+        .btn-custom:hover {
+            background-color: #457b9d; /* Lighter shade on hover */
+        }
+    </style>
+</head>
+<body>
+    <header class="header-bg text-white py-3">
+        <div class="container d-flex justify-content-between align-items-center">
+            <img src="" alt="Logo" height="50">
+            <a href="{{ url_for('tms.login') }}" class="btn btn-custom">Login</a>
+        </div>
+    </header>
+
+    <main class="container my-5">
+        <h1 class="text-center mb-4" style="color: #1d3557;">Today's Ticket Overview</h1>
+        <div class="row text-center">
+            <!-- Flash message section -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="alert-container">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+        <div class="row text-center">
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Active Tickets</h5>
+                        <p class="card-text">{{ active_tickets_count }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Resolved Tickets</h5>
+                        <p class="card-text">{{ resolved_tickets_count }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Closed Tickets</h5>
+                        <p class="card-text">{{ closed_tickets_count }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Active Agents</h5>
+                        <p class="card-text">{{ active_agents_count }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
